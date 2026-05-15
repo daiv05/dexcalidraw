@@ -34,7 +34,7 @@ import type { Socket } from "socket.io-client";
 
 let pbClient: PocketBase | null = null;
 
-const getPb = (): PocketBase => {
+export const getPb = (): PocketBase => {
   if (!pbClient) {
     pbClient = new PocketBase(import.meta.env.VITE_APP_POCKETBASE_URL);
   }
@@ -273,6 +273,79 @@ export const loadFromFirebase = async (
   }
 
   return elements;
+};
+
+// ---------------------------------------------------------------------------
+// User scene registry (user_scenes collection)
+// ---------------------------------------------------------------------------
+
+export interface UserScene {
+  id: string;
+  room_id: string;
+  room_key: string;
+  name: string;
+  type: "own" | "joined";
+  last_visited_at: string;
+}
+
+export const saveUserScene = async (
+  scene: Omit<UserScene, "id">,
+): Promise<void> => {
+  const pb = getPb();
+  if (!pb.authStore.isValid) {
+    return;
+  }
+
+  let existing: UserScene | null = null;
+  try {
+    existing = await pb
+      .collection("user_scenes")
+      .getFirstListItem<UserScene>(
+        pb.filter("room_id = {:roomId}", { roomId: scene.room_id }),
+      );
+  } catch {
+    // not found — will create
+  }
+
+  if (existing) {
+    await pb.collection("user_scenes").update(existing.id, {
+      last_visited_at: scene.last_visited_at,
+      name: scene.name,
+    });
+  } else {
+    await pb.collection("user_scenes").create({
+      ...scene,
+      user_id: pb.authStore.model?.id ?? "",
+    });
+  }
+};
+
+export const loadUserScenes = async (): Promise<UserScene[]> => {
+  const pb = getPb();
+  if (!pb.authStore.isValid) {
+    return [];
+  }
+  const userId = pb.authStore.model?.id ?? "";
+  const records = await pb
+    .collection("user_scenes")
+    .getFullList<UserScene>({
+      sort: "-last_visited_at",
+      filter: pb.filter("user_id = {:userId}", { userId }),
+    });
+  return records;
+};
+
+export const updateUserSceneName = async (
+  recordId: string,
+  name: string,
+): Promise<void> => {
+  const pb = getPb();
+  await pb.collection("user_scenes").update(recordId, { name });
+};
+
+export const deleteUserScene = async (recordId: string): Promise<void> => {
+  const pb = getPb();
+  await pb.collection("user_scenes").delete(recordId);
 };
 
 export const loadFilesFromFirebase = async (

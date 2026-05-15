@@ -75,11 +75,13 @@ import {
 import { FileStatusStore } from "../data/fileStatusStore";
 import { LocalData } from "../data/LocalData";
 import {
+  getPb,
   isSavedToFirebase,
   loadFilesFromFirebase,
   loadFromFirebase,
   saveFilesToFirebase,
   saveToFirebase,
+  saveUserScene,
 } from "../data/pocketbase";
 import {
   importUsernameFromLocalStorage,
@@ -123,6 +125,7 @@ export interface CollabAPI {
   getUsername: CollabInstance["getUsername"];
   getActiveRoomLink: CollabInstance["getActiveRoomLink"];
   setCollabError: CollabInstance["setErrorDialog"];
+  createRoom: CollabInstance["createRoom"];
 }
 
 interface CollabProps {
@@ -242,6 +245,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       getUsername: this.getUsername,
       getActiveRoomLink: this.getActiveRoomLink,
       setCollabError: this.setErrorDialog,
+      createRoom: this.createRoom,
     };
 
     appJotaiStore.set(collabAPIAtom, collabAPI);
@@ -380,7 +384,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
     if (!keepRemoteState) {
       LocalData.fileStorage.reset();
       this.destroySocketClient();
-    } else if (window.confirm(t("alerts.collabStopOverridePrompt"))) {
+    } else {
       // hack to ensure that we prefer we disregard any new browser state
       // that could have been saved in other tabs while we were collaborating
       resetBrowserStateVersions();
@@ -706,6 +710,16 @@ class Collab extends PureComponent<CollabProps, CollabState> {
 
     this.setActiveRoomLink(window.location.href);
 
+    if (getPb().authStore.isValid && existingRoomLinkData) {
+      saveUserScene({
+        room_id: roomId,
+        room_key: roomKey,
+        name: `Escena compartida ${new Date().toLocaleDateString("es-ES")}`,
+        type: "joined",
+        last_visited_at: new Date().toISOString(),
+      }).catch(console.error);
+    }
+
     return scenePromise;
   };
 
@@ -988,6 +1002,37 @@ class Collab extends PureComponent<CollabProps, CollabState> {
     SYNC_FULL_SCENE_INTERVAL_MS,
     { leading: false },
   );
+
+  createRoom = async (): Promise<string> => {
+    // If already in a room, cleanly disconnect first so startCollaboration
+    // doesn't bail out on the non-null socket check.
+    if (this.portal.socket) {
+      this.stopCollaboration(false);
+    }
+
+    const { roomId, roomKey } = await generateCollaborationLinkData();
+    const link = getCollaborationLink({ roomId, roomKey });
+
+    if (getPb().authStore.isValid) {
+      saveUserScene({
+        room_id: roomId,
+        room_key: roomKey,
+        name: `Escena ${new Date().toLocaleDateString("es-ES")}`,
+        type: "own",
+        last_visited_at: new Date().toISOString(),
+      }).catch(console.error);
+    }
+
+    window.history.pushState({}, APP_NAME, link);
+    window.dispatchEvent(
+      new HashChangeEvent("hashchange", {
+        oldURL: window.location.href,
+        newURL: link,
+      }),
+    );
+
+    return link;
+  };
 
   setUsername = (username: string) => {
     this.setState({ username });

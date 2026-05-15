@@ -17,8 +17,9 @@ import { useI18n } from "@excalidraw/excalidraw/i18n";
 import { KEYS, getFrame } from "@excalidraw/common";
 import { useEffect, useRef, useState } from "react";
 
-import { atom, useAtom, useAtomValue } from "../app-jotai";
+import { atom, useAtom, useAtomValue, useSetAtom } from "../app-jotai";
 import { activeRoomLinkAtom } from "../collab/Collab";
+import { sceneManagerOpenAtom } from "../scenes/scene-atoms";
 
 import "./ShareDialog.scss";
 import { QRCode } from "./QRCode";
@@ -101,9 +102,7 @@ const ActiveRoomDialog = ({
 
   return (
     <>
-      <h3 className="ShareDialog__active__header">
-        {t("labels.liveCollaboration").replace(/\./g, "")}
-      </h3>
+      <h3 className="ShareDialog__active__header">Shared Room</h3>
       <TextField
         defaultValue={collabAPI.getUsername()}
         placeholder="Your name"
@@ -152,18 +151,20 @@ const ActiveRoomDialog = ({
           </span>
           {t("roomDialog.desc_privacy")}
         </p>
-        <p>{t("roomDialog.desc_exitSession")}</p>
+        <p>
+          Esta sala es permanente. Cualquiera con el link puede unirse en
+          cualquier momento.
+        </p>
       </div>
 
       <div className="ShareDialog__active__actions">
         <FilledButton
           size="large"
           variant="outlined"
-          color="danger"
-          label={t("roomDialog.button_stopSession")}
+          label="Leave room"
           icon={playerStopFilledIcon}
           onClick={() => {
-            trackEvent("share", "room closed");
+            trackEvent("share", "room left");
             collabAPI.stopCollaboration();
             if (!collabAPI.isCollaborating()) {
               handleClose();
@@ -177,28 +178,39 @@ const ActiveRoomDialog = ({
 
 const ShareDialogPicker = (props: ShareDialogProps) => {
   const { t } = useI18n();
-
   const { collabAPI } = props;
+  const openSceneManager = useSetAtom(sceneManagerOpenAtom);
 
   const startCollabJSX = collabAPI ? (
     <>
-      <div className="ShareDialog__picker__header">
-        {t("labels.liveCollaboration").replace(/\./g, "")}
-      </div>
+      <div className="ShareDialog__picker__header">Salas compartidas</div>
 
       <div className="ShareDialog__picker__description">
         <div style={{ marginBottom: "1em" }}>{t("roomDialog.desc_intro")}</div>
         {t("roomDialog.desc_privacy")}
       </div>
 
-      <div className="ShareDialog__picker__button">
+      <div
+        className="ShareDialog__picker__button"
+        style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}
+      >
         <FilledButton
           size="large"
-          label={t("roomDialog.button_startSession")}
+          label="Nueva escena"
           icon={playerPlayIcon}
           onClick={() => {
             trackEvent("share", "room creation", `ui (${getFrame()})`);
-            collabAPI.startCollaboration(null);
+            collabAPI.createRoom();
+            props.handleClose();
+          }}
+        />
+        <FilledButton
+          size="large"
+          variant="outlined"
+          label="Mis escenas"
+          onClick={() => {
+            props.handleClose();
+            openSceneManager(true);
           }}
         />
       </div>

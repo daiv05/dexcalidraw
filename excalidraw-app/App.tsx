@@ -110,6 +110,9 @@ import {
 import { isBrowserStorageStateNewer } from "./data/tabSync";
 import { ShareDialog, shareDialogStateAtom } from "./share/ShareDialog";
 import CollabError, { collabErrorIndicatorAtom } from "./collab/CollabError";
+import { LoginDialog } from "./auth/LoginDialog";
+import { useAuth } from "./auth/useAuth";
+import { SceneManagerDialog } from "./scenes/SceneManagerDialog";
 import { useHandleAppTheme } from "./useHandleAppTheme";
 import { getPreferredLanguage } from "./app-language/language-detector";
 import { useAppLangCode } from "./app-language/language-state";
@@ -269,6 +272,8 @@ const initializeScene = async (opts: {
 
 const ExcalidrawWrapper = () => {
   const excalidrawAPI = useExcalidrawAPI();
+
+  useAuth();
 
   const [errorMessage, setErrorMessage] = useState("");
   const isCollabDisabled = isRunningInIframe();
@@ -772,6 +777,9 @@ const ExcalidrawWrapper = () => {
         )}
 
         <ShareDialog collabAPI={collabAPI} />
+
+        <LoginDialog />
+        <SceneManagerDialog collabAPI={collabAPI} />
 
         <AppSidebar />
 

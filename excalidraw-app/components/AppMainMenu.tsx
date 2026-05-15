@@ -6,6 +6,11 @@ import { isDevEnv } from "@excalidraw/common";
 
 import type { Theme } from "@excalidraw/element/types";
 
+import { useAtomValue, useSetAtom } from "../app-jotai";
+import { currentUserAtom, loginDialogOpenAtom } from "../auth/auth-atoms";
+import { useAuth } from "../auth/useAuth";
+import { sceneManagerOpenAtom } from "../scenes/scene-atoms";
+
 import { LanguageList } from "../app-language/LanguageList";
 
 import { saveDebugState } from "./DebugCanvas";
@@ -18,6 +23,11 @@ export const AppMainMenu: React.FC<{
   setTheme: (theme: Theme | "system") => void;
   refresh: () => void;
 }> = React.memo((props) => {
+  const openSceneManager = useSetAtom(sceneManagerOpenAtom);
+  const openLogin = useSetAtom(loginDialogOpenAtom);
+  const currentUser = useAtomValue(currentUserAtom);
+  const { logout } = useAuth();
+
   return (
     <MainMenu>
       <MainMenu.DefaultItems.LoadScene />
@@ -30,6 +40,9 @@ export const AppMainMenu: React.FC<{
           onSelect={() => props.onCollabDialogOpen()}
         />
       )}
+      <MainMenu.Item onSelect={() => openSceneManager(true)}>
+        Mis escenas
+      </MainMenu.Item>
       <MainMenu.DefaultItems.CommandPalette className="highlighted" />
       <MainMenu.DefaultItems.SearchMenu />
       <MainMenu.DefaultItems.Help />
@@ -54,6 +67,15 @@ export const AppMainMenu: React.FC<{
         </MainMenu.Item>
       )}
       <MainMenu.Separator />
+      {currentUser ? (
+        <MainMenu.Item onSelect={logout}>
+          Cerrar sesión ({currentUser.email ?? currentUser.name})
+        </MainMenu.Item>
+      ) : (
+        <MainMenu.Item onSelect={() => openLogin(true)}>
+          Iniciar sesión
+        </MainMenu.Item>
+      )}
       <MainMenu.DefaultItems.Preferences />
       <MainMenu.DefaultItems.ToggleTheme
         allowSystemTheme
