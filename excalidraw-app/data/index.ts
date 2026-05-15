@@ -1,5 +1,6 @@
 import { generateEncryptionKey } from "@excalidraw/excalidraw/data/encryption";
 import { isInvisiblySmallElement } from "@excalidraw/element";
+import { t } from "@excalidraw/excalidraw/i18n";
 import { bytesToHexString } from "@excalidraw/common";
 
 import type { UserIdleState } from "@excalidraw/common";
@@ -7,8 +8,6 @@ import type { SceneBounds } from "@excalidraw/element";
 import type { OrderedExcalidrawElement } from "@excalidraw/element/types";
 import type { AppState, SocketId } from "@excalidraw/excalidraw/types";
 import type { MakeBrand } from "@excalidraw/common/utility-types";
-
-import { t } from "@excalidraw/excalidraw/i18n";
 
 import { DELETED_ELEMENT_TIMEOUT, ROOM_ID_BYTES } from "../app_constants";
 
