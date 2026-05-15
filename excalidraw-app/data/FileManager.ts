@@ -236,7 +236,7 @@ export const encodeFilesForUpload = async ({
 }) => {
   const processedFiles: {
     id: FileId;
-    buffer: Uint8Array;
+    buffer: Uint8Array<ArrayBuffer>;
   }[] = [];
 
   for (const [id, fileData] of files) {

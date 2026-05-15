@@ -1,4 +1,5 @@
 services:
+  # App web en modo desarrollo (Vite dev server con HMR)
   excalidraw:
     build:
       context: .
@@ -6,7 +7,7 @@ services:
         - NODE_ENV=development
     container_name: excalidraw
     ports:
-      - "3000:80"
+      - "3001:3001"
     restart: on-failure
     stdin_open: true
     healthcheck:
@@ -18,6 +19,27 @@ services:
       - ./package.json:/opt/node_app/package.json
       - ./yarn.lock:/opt/node_app/yarn.lock
       - notused:/opt/node_app/app/node_modules
+
+  # Servidor de colaboración en tiempo real (Socket.io)
+  collab:
+    image: excalidraw/excalidraw-room:latest
+    restart: on-failure
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+
+  # Persistencia de escenas e imágenes
+  pocketbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.pocketbase
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./pb_data:/opt/pb/pb_data
+      - ./pb_migrations:/opt/pb/pb_migrations
 
 volumes:
   notused:

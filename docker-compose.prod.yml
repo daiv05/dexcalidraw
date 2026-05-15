@@ -1,0 +1,41 @@
+services:
+  # App web (frontend estático servido por Nginx)
+  excalidraw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - dexcalidraw
+
+  # Servidor de colaboración en tiempo real (Socket.io)
+  # Repo: https://github.com/excalidraw/excalidraw-room
+  collab:
+    image: excalidraw/excalidraw-room:latest
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+    networks:
+      - dexcalidraw
+
+  # Persistencia de escenas e imágenes (SQLite + file storage)
+  pocketbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.pocketbase
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./pb_data:/opt/pb/pb_data
+      - ./pb_migrations:/opt/pb/pb_migrations
+    networks:
+      - dexcalidraw
+
+networks:
+  dexcalidraw:
+    driver: bridge

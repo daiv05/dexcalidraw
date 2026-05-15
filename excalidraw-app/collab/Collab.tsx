@@ -55,7 +55,7 @@ import { appJotaiStore, atom } from "../app-jotai";
 import {
   CURSOR_SYNC_TIMEOUT,
   FILE_UPLOAD_MAX_BYTES,
-  FIREBASE_STORAGE_PREFIXES,
+  STORAGE_PREFIXES,
   INITIAL_SCENE_UPDATE_TIMEOUT,
   LOAD_IMAGES_TIMEOUT,
   WS_SUBTYPES,
@@ -80,7 +80,7 @@ import {
   loadFromFirebase,
   saveFilesToFirebase,
   saveToFirebase,
-} from "../data/firebase";
+} from "../data/pocketbase";
 import {
   importUsernameFromLocalStorage,
   saveUsernameToLocalStorage,
@@ -157,7 +157,11 @@ class Collab extends PureComponent<CollabProps, CollabState> {
           throw new AbortError();
         }
 
-        return loadFilesFromFirebase(`files/rooms/${roomId}`, roomKey, fileIds);
+        return loadFilesFromFirebase(
+          `${STORAGE_PREFIXES.collabFiles}/${roomId}`,
+          roomKey,
+          fileIds,
+        );
       },
       saveFiles: async ({ addedFiles }) => {
         const { roomId, roomKey } = this.portal;
@@ -166,7 +170,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
         }
 
         const { savedFiles, erroredFiles } = await saveFilesToFirebase({
-          prefix: `${FIREBASE_STORAGE_PREFIXES.collabFiles}/${roomId}`,
+          prefix: `${STORAGE_PREFIXES.collabFiles}/${roomId}`,
           files: await encodeFilesForUpload({
             files: addedFiles,
             encryptionKey: roomKey,
