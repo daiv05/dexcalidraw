@@ -29,3 +29,4 @@ meta*.json
 .claude
 pb_data/
 **.local**
+.devdbrc
